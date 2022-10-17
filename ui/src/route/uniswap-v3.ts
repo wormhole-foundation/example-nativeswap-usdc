@@ -15,7 +15,7 @@ import {
 
 import { UniswapRouterCore } from "./uniswap-core";
 import { ETH_TOKEN_INFO } from "../utils/consts";
-import { UstLocation } from "./generic";
+import { UsdcLocation } from "./generic";
 
 export const PROTOCOL = "UniswapV3";
 
@@ -33,8 +33,8 @@ export class UniswapV3Router extends UniswapRouterCore {
     this.poolFee = FeeAmount.MEDIUM;
   }
 
-  async initialize(ustLocation: UstLocation): Promise<void> {
-    await this.initializeTokens(ETH_TOKEN_INFO, ustLocation);
+  async initialize(usdcLocation: UsdcLocation): Promise<void> {
+    await this.initializeTokens(ETH_TOKEN_INFO, usdcLocation);
     return;
   }
 

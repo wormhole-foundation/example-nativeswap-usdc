@@ -1,13 +1,9 @@
-//@ts-nocheck
 import { ethers } from "ethers";
 import { TransactionReceipt } from "@ethersproject/abstract-provider";
 import {
   ChainId,
   CHAIN_ID_ETH,
-  CHAIN_ID_POLYGON,
   CHAIN_ID_AVAX,
-  CHAIN_ID_BSC,
-  CHAIN_ID_TERRA,
   getEmitterAddressEth,
   hexToUint8Array,
   nativeToHexString,
@@ -25,20 +21,12 @@ import {
 } from "../route/cross-quote";
 import {
   TOKEN_BRIDGE_ADDRESS_ETHEREUM,
-  TOKEN_BRIDGE_ADDRESS_POLYGON,
-  TOKEN_BRIDGE_ADDRESS_TERRA,
   TOKEN_BRIDGE_ADDRESS_AVALANCHE,
-  TOKEN_BRIDGE_ADDRESS_BSC,
   CORE_BRIDGE_ADDRESS_ETHEREUM,
-  CORE_BRIDGE_ADDRESS_POLYGON,
-  CORE_BRIDGE_ADDRESS_TERRA,
   CORE_BRIDGE_ADDRESS_AVALANCHE,
-  CORE_BRIDGE_ADDRESS_BSC,
   WORMHOLE_RPC_HOSTS,
-  //ETH_NETWORK_CHAIN_ID,
-  //POLYGON_NETWORK_CHAIN_ID,
-  //TERRA_NETWORK_CHAIN_ID,
-  UST_TOKEN_INFO,
+  AVAX_TOKEN_INFO,
+  ETH_TOKEN_INFO,
 } from "../utils/consts";
 import {
   evmSwapExactInFromVaaNative,
@@ -50,14 +38,8 @@ import {
 import { abi as SWAP_CONTRACT_V2_ABI } from "../abi/contracts/CrossChainSwapV2.json";
 import { abi as SWAP_CONTRACT_V3_ABI } from "../abi/contracts/CrossChainSwapV3.json";
 import { SWAP_CONTRACT_ADDRESS as CROSSCHAINSWAP_CONTRACT_ADDRESS_ETHEREUM } from "../addresses/goerli";
-import { SWAP_CONTRACT_ADDRESS as CROSSCHAINSWAP_CONTRACT_ADDRESS_POLYGON } from "../addresses/mumbai";
 import { SWAP_CONTRACT_ADDRESS as CROSSCHAINSWAP_CONTRACT_ADDRESS_AVALANCHE } from "../addresses/fuji";
-import { SWAP_CONTRACT_ADDRESS as CROSSCHAINSWAP_CONTRACT_ADDRESS_BSC } from "../addresses/bsc";
 import { makeErc20Contract } from "../route/evm";
-
-// placeholders
-const CROSSCHAINSWAP_CONTRACT_ADDRESS_TERRA =
-  "terra163shc8unyqrndgcldaj2q9kgnqs82v0kgkhynf";
 
 function makeNullSwapPath(): any[] {
   const zeroBuffer = Buffer.alloc(20);
@@ -93,17 +75,6 @@ const EXECUTION_PARAMETERS_ETHEREUM: ExecutionParameters = {
   },
 };
 
-const EXECUTION_PARAMETERS_POLYGON: ExecutionParameters = {
-  crossChainSwap: {
-    address: CROSSCHAINSWAP_CONTRACT_ADDRESS_POLYGON,
-  },
-  wormhole: {
-    chainId: CHAIN_ID_POLYGON,
-    coreBridgeAddress: CORE_BRIDGE_ADDRESS_POLYGON,
-    tokenBridgeAddress: TOKEN_BRIDGE_ADDRESS_POLYGON,
-  },
-};
-
 const EXECUTION_PARAMETERS_AVALANCHE: ExecutionParameters = {
   crossChainSwap: {
     address: CROSSCHAINSWAP_CONTRACT_ADDRESS_AVALANCHE,
@@ -115,44 +86,13 @@ const EXECUTION_PARAMETERS_AVALANCHE: ExecutionParameters = {
   },
 };
 
-const EXECUTION_PARAMETERS_BSC: ExecutionParameters = {
-  crossChainSwap: {
-    address: CROSSCHAINSWAP_CONTRACT_ADDRESS_BSC,
-  },
-  wormhole: {
-    chainId: CHAIN_ID_BSC,
-    coreBridgeAddress: CORE_BRIDGE_ADDRESS_BSC,
-    tokenBridgeAddress: TOKEN_BRIDGE_ADDRESS_BSC,
-  },
-};
-
-const EXECUTION_PARAMETERS_TERRA: ExecutionParameters = {
-  crossChainSwap: {
-    address: CROSSCHAINSWAP_CONTRACT_ADDRESS_TERRA,
-  },
-  wormhole: {
-    chainId: CHAIN_ID_TERRA,
-    coreBridgeAddress: CORE_BRIDGE_ADDRESS_TERRA,
-    tokenBridgeAddress: TOKEN_BRIDGE_ADDRESS_TERRA,
-  },
-};
-
 function makeExecutionParameters(chainId: ChainId): ExecutionParameters {
   switch (chainId) {
     case CHAIN_ID_ETH: {
       return EXECUTION_PARAMETERS_ETHEREUM;
     }
-    case CHAIN_ID_POLYGON: {
-      return EXECUTION_PARAMETERS_POLYGON;
-    }
     case CHAIN_ID_AVAX: {
       return EXECUTION_PARAMETERS_AVALANCHE;
-    }
-    case CHAIN_ID_BSC: {
-      return EXECUTION_PARAMETERS_BSC;
-    }
-    case CHAIN_ID_TERRA: {
-      return EXECUTION_PARAMETERS_TERRA;
     }
     default: {
       throw Error("unrecognized chain id");
@@ -236,8 +176,8 @@ function evmMakeExactInSwapParameters(
   dstWormholeChainId: ChainId,
   quoteParams: ExactInCrossParameters
 ): any[] {
-  const src = quoteParams.src;
-  const dst = quoteParams.dst;
+  const src = quoteParams.src!;
+  const dst = quoteParams.dst!;
 
   if (dst === undefined) {
     return [
@@ -264,7 +204,7 @@ function makePathArray(
   quoteParams: ExactInCrossParameters | ExactOutCrossParameters
 ): any[] {
   if (quoteParams.src === undefined) {
-    return NULL_SWAP_PATH.concat(quoteParams.dst.path);
+    return NULL_SWAP_PATH.concat(quoteParams.dst?.path);
   } else if (quoteParams.dst === undefined) {
     return quoteParams.src.path.concat(NULL_SWAP_PATH);
   } else {
@@ -284,7 +224,7 @@ async function evmApproveAndSwapExactIn(
 ): Promise<TransactionReceipt> {
   const swapContractParams = srcExecutionParams.crossChainSwap;
 
-  const protocol = quoteParams.src.protocol;
+  const protocol = quoteParams.src?.protocol!;
   const swapContract = makeCrossChainSwapEvmContract(
     srcProvider,
     protocol,
@@ -293,7 +233,7 @@ async function evmApproveAndSwapExactIn(
   const contractWithSigner = swapContract.connect(srcWallet);
 
   // approve and swap this amount
-  const amountIn = quoteParams.src.amountIn;
+  const amountIn = quoteParams.src?.amountIn!;
   const dstWormholeChainId = dstExecutionParams.wormhole.chainId;
 
   const swapParams = evmMakeExactInSwapParameters(
@@ -364,7 +304,7 @@ async function evmApproveAndSwapExactOut(
 ): Promise<TransactionReceipt> {
   const swapContractParams = srcExecutionParams.crossChainSwap;
 
-  const protocol = quoteParams.src?.protocol;
+  const protocol = quoteParams.src?.protocol!;
   const swapContract = makeCrossChainSwapEvmContract(
     srcProvider,
     protocol,
@@ -374,16 +314,16 @@ async function evmApproveAndSwapExactOut(
 
   // approve and swap this amount
   const amountOut = quoteParams.src?.amountOut;
-  const maxAmountIn = quoteParams.src?.maxAmountIn;
+  const maxAmountIn = quoteParams.src?.maxAmountIn!;
   const dstWormholeChainId = dstExecutionParams.wormhole.chainId;
 
   const swapParams = [
     amountOut,
     maxAmountIn,
-    quoteParams.dst.amountOut,
+    quoteParams.dst?.amountOut,
     addressToBytes32(recipientAddress, dstWormholeChainId),
-    quoteParams.src.deadline,
-    quoteParams.dst.poolFee || quoteParams.src.poolFee || 0,
+    quoteParams.src?.deadline,
+    quoteParams.dst?.poolFee || quoteParams.src?.poolFee || 0,
   ];
   const pathArray = makePathArray(quoteParams);
 
@@ -497,17 +437,9 @@ export function makeEvmProvider(tokenAddress: string) {
       url = process.env.REACT_APP_GOERLI_PROVIDER;
       if (!url) throw new Error("REACT_APP_GOERLI_PROVIDER not set");
       break;
-    case MATIC_TOKEN_INFO.address:
-      url = process.env.REACT_APP_MUMBAI_PROVIDER;
-      if (!url) throw new Error("REACT_APP_MUMBAI_PROVIDER not set");
-      break;
     case AVAX_TOKEN_INFO.address:
       url = process.env.REACT_APP_FUJI_PROVIDER;
       if (!url) throw new Error("REACT_APP_FUJI_PROVIDER not set");
-      break;
-    case BSC_TOKEN_INFO.address:
-      url = process.env.REACT_APP_BSC_PROVIDER;
-      if (!url) throw new Error("REACT_APP_BSC_PROVIDER not set");
       break;
     default:
       throw Error("unrecognized token address");
@@ -643,11 +575,11 @@ export class UniswapToUniswapExecutor {
   }
 
   getSrcEvmProvider(): ethers.providers.Provider {
-    return this.quoter.getSrcEvmProvider();
+    return this.quoter.getSrcEvmProvider()!;
   }
 
   getDstEvmProvider(): ethers.providers.Provider {
-    return this.quoter.getDstEvmProvider();
+    return this.quoter.getDstEvmProvider()!;
   }
 
   getTokenInAddress(): string {
@@ -687,13 +619,6 @@ export class UniswapToUniswapExecutor {
       this.dstExecutionParams,
       this.isNative,
       recipientAddress
-    );
-  }
-
-  srcIsUst(): boolean {
-    return (
-      this.quoter.tokenInAddress === UST_TOKEN_INFO.address &&
-      this.cachedExactInParams.src === undefined
     );
   }
 
@@ -797,7 +722,7 @@ export class UniswapToUniswapExecutor {
       this.getDstEvmProvider(),
       wallet,
       this.dstExecutionParams,
-      this.cachedExactInParams.dst.protocol,
+      this.cachedExactInParams.dst?.protocol!,
       this.vaaBytes,
       this.isNative
     );
@@ -810,7 +735,7 @@ export class UniswapToUniswapExecutor {
       this.getDstEvmProvider(),
       wallet,
       this.dstExecutionParams,
-      this.cachedExactOutParams.dst.protocol,
+      this.cachedExactOutParams.dst?.protocol!,
       this.vaaBytes,
       this.isNative
     );

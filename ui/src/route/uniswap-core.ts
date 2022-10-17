@@ -3,7 +3,7 @@ import { ethers } from "ethers";
 import { CurrencyAmount, Token } from "@uniswap/sdk-core";
 
 import { EvmToken } from "./evm";
-import { RouterCore, UstLocation } from "./generic";
+import { RouterCore, UsdcLocation } from "./generic";
 import { TokenInfo } from "../utils/consts";
 
 export function computeTradeDeadline(deadline: string): ethers.BigNumber {
@@ -160,19 +160,19 @@ export abstract class UniswapRouterCore extends RouterCore {
 
   public async initializeTokens(
     tokenInfo: TokenInfo,
-    ustLocation: UstLocation
+    usdcLocation: UsdcLocation
   ): Promise<void> {
     this.network = await this.provider.getNetwork();
 
     const network = this.network;
 
-    if (ustLocation === UstLocation.Out) {
+    if (usdcLocation === UsdcLocation.Out) {
       [this.tokenIn, this.tokenOut] = await Promise.all([
         makeUniEvmToken(this.provider, network.chainId, tokenInfo.address),
         makeUniEvmToken(
           this.provider,
           network.chainId,
-          tokenInfo.ustPairedAddress
+          tokenInfo.usdcPairedAddress
         ),
       ]);
     } else {
@@ -180,7 +180,7 @@ export abstract class UniswapRouterCore extends RouterCore {
         makeUniEvmToken(
           this.provider,
           network.chainId,
-          tokenInfo.ustPairedAddress
+          tokenInfo.usdcPairedAddress
         ),
         makeUniEvmToken(this.provider, network.chainId, tokenInfo.address),
       ]);

@@ -7,11 +7,8 @@ import {
 } from "@material-ui/core";
 import {
   AVAX_TOKEN_INFO,
-  BNB_TOKEN_INFO,
   ETH_TOKEN_INFO,
-  MATIC_TOKEN_INFO,
   TokenInfo,
-  UST_TOKEN_INFO,
 } from "../utils/consts";
 
 import ethIcon from "../icons/eth.svg";
@@ -40,14 +37,8 @@ const getLogo = (name: string) => {
   switch (name) {
     case ETH_TOKEN_INFO.name:
       return ethIcon;
-    case MATIC_TOKEN_INFO.name:
-      return polygonIcon;
-    case UST_TOKEN_INFO.name:
-      return terraIcon;
     case AVAX_TOKEN_INFO.name:
       return avaxIcon;
-    case BNB_TOKEN_INFO.name:
-      return bscIcon;
     default:
       return "";
   }

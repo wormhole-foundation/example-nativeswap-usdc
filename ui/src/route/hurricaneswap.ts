@@ -1,7 +1,7 @@
 import { ethers } from "ethers";
 
 import { AVAX_TOKEN_INFO } from "../utils/consts";
-import { UstLocation } from "./generic";
+import { UsdcLocation } from "./generic";
 import { UniswapV2Router } from "./uniswap-v2";
 
 export { PROTOCOL } from "./uniswap-v2";
@@ -14,13 +14,13 @@ export class HurricaneswapRouter extends UniswapV2Router {
     super.setFactoryAddress(HURRICANESWAP_FACTORY_ADDRESS);
   }
 
-  async initialize(ustLocation: UstLocation): Promise<void> {
-    await super.initializeTokens(AVAX_TOKEN_INFO, ustLocation);
+  async initialize(usdcLocation: UsdcLocation): Promise<void> {
+    await super.initializeTokens(AVAX_TOKEN_INFO, usdcLocation);
     return;
   }
 
   computePoolAddress(): string {
     // cannot find factory address on testnet
-    return "0xD8087870E8869e45154189d434DF61C19e77ae30";
+    return "0x808FF1000c3A70A8D55725C44FffD6b7BfeDD06A";
   }
 }

@@ -1,4 +1,4 @@
-export enum UstLocation {
+export enum UsdcLocation {
   In = 1,
   Out,
 }

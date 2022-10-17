@@ -19,11 +19,11 @@ import EthereumSignerKey from "../components/EthereumSignerKey";
 import TokenSelect from "../components/TokenSelect";
 import { useEthereumProvider } from "../contexts/EthereumProviderContext";
 import {
+  AVAX_TOKEN_INFO,
   ETH_TOKEN_INFO,
   getEvmChainId,
   getSupportedSwaps,
-  MATIC_TOKEN_INFO,
-  RELAYER_FEE_UST,
+  RELAYER_FEE_USDC,
   TokenInfo,
   TOKEN_INFOS,
   WORMHOLE_RPC_HOSTS,
@@ -233,12 +233,12 @@ const SwapButton = ({
 
 export default function Home() {
   const classes = useStyles();
-  const [sourceTokenInfo, setSourceTokenInfo] = useState(MATIC_TOKEN_INFO);
+  const [sourceTokenInfo, setSourceTokenInfo] = useState(AVAX_TOKEN_INFO);
   const [targetTokenInfo, setTargetTokenInfo] = useState(ETH_TOKEN_INFO);
   const [amountIn, setAmountIn] = useState("");
-  const [amountInUST, setAmountInUST] = useState("");
+  const [amountInUSDC, setAmountInUSDC] = useState("");
   const [amountOut, setAmountOut] = useState("");
-  const [deadline, setDeadline] = useState("30");
+  const [deadline, setDeadline] = useState("5");
   const [slippage, setSlippage] = useState("1");
   const [executor, setExecutor] = useState<UniswapToUniswapExecutor | null>(
     null
@@ -261,7 +261,7 @@ export default function Home() {
       setHasQuote(false);
       setIsComputingQuote(true);
       setAmountOut("");
-      setAmountInUST("");
+      setAmountInUSDC("");
       try {
         if (
           parseFloat(amountIn) > 0 &&
@@ -282,11 +282,11 @@ export default function Home() {
           });
           executor.setDeadlines((parseFloat(deadline) * 60).toString());
           executor.setSlippage((parseFloat(slippage) / 100).toString());
-          executor.setRelayerFee(RELAYER_FEE_UST);
+          executor.setRelayerFee(RELAYER_FEE_USDC);
           const quote = await executor.computeQuoteExactIn(amountIn);
           setExecutor(executor);
           setAmountOut(parseFloat(quote.minAmountOut).toFixed(8));
-          setAmountInUST(parseFloat(quote.ustAmountIn).toFixed(2));
+          setAmountInUSDC(parseFloat(quote.usdcAmountIn).toFixed(3));
           setHasQuote(true);
         }
       } catch (e) {
@@ -515,7 +515,7 @@ export default function Home() {
             />
             <div className={classes.spacer} />
             <Typography variant="subtitle2">{`Slippage tolerance: ${slippage}%`}</Typography>
-            <Typography variant="subtitle2">{`Relayer fee: ${RELAYER_FEE_UST} UST`}</Typography>
+            <Typography variant="subtitle2">{`Relayer fee: ${RELAYER_FEE_USDC} USDC`}</Typography>
             <SwapButton
               source={sourceTokenInfo}
               target={targetTokenInfo}
@@ -554,7 +554,7 @@ export default function Home() {
             <Typography variant="subtitle1" className={classes.swapPath}>
               {`${amountIn} ${sourceTokenInfo.name}`}
               <ArrowForward fontSize="inherit" style={{ margin: "10px" }} />
-              {`${amountInUST} UST `}
+              {`${amountInUSDC} USDC `}
               <ArrowForward fontSize="inherit" style={{ margin: "10px" }} />
               {`${amountOut} ${targetTokenInfo.name}`}
             </Typography>
