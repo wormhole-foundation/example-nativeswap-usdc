@@ -8,7 +8,7 @@ Multi-chain native-to-native token swap using existing DEXes.
 
 ### Details
 
-Using liquidity of native vs UST (i.e. the UST highway), one can swap from native A on chain A to native B on chain B. For this specific example, we demonstrate a swap between any combination of ETH (Goerli testnet), AVAX (Fuji testnet), MATIC (Mumbai testnet) and BNB (BSC testnet). We wrote example smart contracts to interact with Uniswap V3 and Uniswap V2 forks. Any DEX can be used to replace our example as long as the swap for a particular DEX has all of its parameters to perform the swap(s).
+Using liquidity of native vs USDC (i.e. the USDC highway), one can swap from native A on chain A to native B on chain B. For this specific example, we demonstrate a swap between any combination of ETH (Goerli testnet) and AVAX (Fuji testnet). We wrote example smart contracts to interact with Uniswap V3 and Uniswap V2 forks. Any DEX can be used to replace our example as long as the swap for a particular DEX has all of its parameters to perform the swap(s).
 
 A protocol that hosts NativeSwap is expected to run its own relayer to enhance its user experience by only requiring a one-click transaction to perform the complete swap. Otherwise the user will have to perform an extra transaction to manually allow the final swap.
 
@@ -16,15 +16,16 @@ Here is what happens under the hood of this example:
 
 - User generates quote from front-end for native-to-native swap.
 - User calls the smart contract with its quote on chain A.
-- Smart contract on chain A executes swap from native A to UST. If the swap succeeds, the smart contract will execute a Token Bridge transfer of UST with encoded swap parameters for chain B.
-- Guardians sign the Token Bridge transfer.
-- The relayer reads the signed VAA and calls the smart contract with the VAA as its only argument.
-- Smart contract on chain B completes the UST transfer and decodes the swap parameters from the Wormhole message payload.
-- Smart contract on chain B executes swap from UST to native B. If the swap succeeds, the smart contract will send native B to user. Otherwise, it will send UST to user.
+- Smart contract on chain A executes swap from native A to USDC. If the swap succeeds, the smart contract will burn the USDC on the source chain, and generate a wormhole message with target-chain swap information.
+- Guardian's sign the wormhole message.
+- Circle generates an attestation for a depositToBurn message.
+- The relayer reads the signed VAA and calls the smart contract with the VAA, the Circle attestation, and Circle depositToBurn message.
+- Smart contract on chain B completes the USDC mint and decodes the swap parameters from the Wormhole message payload.
+- Smart contract on chain B executes swap from USDC to native B. If the swap succeeds, the smart contract will send native B to user. Otherwise, it will send USDC to user.
 
 The Wormhole message payload for swap parameters are all encoded and decoded on-chain.
 
-We also wrote a front-end UI using a custom class (UniswapToUniswapExecutor) to perform the quotes for "Exact In" (swapping from an exact amount of native A to an estimated amount of native B) and "Exact Out" (swapping from an estimated amount of native A to an exact amount of native B) swaps and execute these swaps based on this quote. This library uses the ABIs of our example smart contracts to execute the swap transactions.
+We also wrote a front-end UI using a custom class (UniswapToUniswapExecutor) to perform the quotes for "Exact In" (swapping from an exact amount of native A to an estimated amount of native B) swaps and execute these swaps based on this quote. This library uses the ABIs of our example smart contracts to execute the swap transactions.
 
 ### What's next?
 
