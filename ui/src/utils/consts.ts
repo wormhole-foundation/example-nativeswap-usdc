@@ -32,7 +32,7 @@ export const ETH_TOKEN_INFO: TokenInfo = {
 
 export const AVAX_TOKEN_INFO: TokenInfo = {
   name: "AVAX",
-  address: "0x1d308089a2d1ced3f1ce36b1fcaf815b07217be3",
+  address: "0xd00ae08403B9bbb9124bB305C09058E32C39A48c",
   chainId: CHAIN_ID_AVAX,
   evmChainId: EVM_AVAX_NETWORK_CHAIN_ID,
   //logo: avaxIcon,

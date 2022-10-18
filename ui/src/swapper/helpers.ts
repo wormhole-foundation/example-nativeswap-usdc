@@ -7,6 +7,7 @@ import {
   EVM_AVAX_NETWORK_CHAIN_ID,
   //EVM_BSC_NETWORK_CHAIN_ID,
 } from "../utils/consts";
+import { CrossChainSwapV2, CrossChainSwapV3 } from "../ethers-contracts";
 
 export const CROSSCHAINSWAP_GAS_PARAMETERS_EIP1559 = {
   gasLimit: "694200",
@@ -46,65 +47,26 @@ async function getChainIdFromContract(
   return network.chainId;
 }
 
+export interface RedeemParametersStruct {
+  encodedWormholeMessage: Uint8Array;
+  circleBridgeMessage: Uint8Array;
+  circleAttestation: Uint8Array;
+}
+
 // exact in
 //
 export async function evmSwapExactInFromVaaNative(
-  swapContractWithSigner: ethers.Contract,
-  signedVaa: Uint8Array
+  swapContractWithSigner: CrossChainSwapV2 | CrossChainSwapV3,
+  encodedWormholeMessage: Uint8Array,
+  circleBridgeMessage: Uint8Array,
+  circleAttestation: Uint8Array
 ): Promise<TransactionReceipt> {
   const gasParams = await getEvmGasParametersForContract(
     swapContractWithSigner
   );
 
   const tx = await swapContractWithSigner.recvAndSwapExactNativeIn(
-    signedVaa,
-    gasParams
-  );
-  return tx.wait();
-}
-
-export async function evmSwapExactInFromVaaToken(
-  swapContractWithSigner: ethers.Contract,
-  signedVaa: Uint8Array
-): Promise<TransactionReceipt> {
-  const gasParams = await getEvmGasParametersForContract(
-    swapContractWithSigner
-  );
-
-  const tx = await swapContractWithSigner.recvAndSwapExactIn(
-    signedVaa,
-    gasParams
-  );
-  return tx.wait();
-}
-
-// exact out
-//
-export async function evmSwapExactOutFromVaaNative(
-  swapContractWithSigner: ethers.Contract,
-  signedVaa: Uint8Array
-): Promise<TransactionReceipt> {
-  const gasParams = await getEvmGasParametersForContract(
-    swapContractWithSigner
-  );
-
-  const tx = await swapContractWithSigner.recvAndSwapExactNativeOut(
-    signedVaa,
-    gasParams
-  );
-  return tx.wait();
-}
-
-export async function evmSwapExactOutFromVaaToken(
-  swapContractWithSigner: ethers.Contract,
-  signedVaa: Uint8Array
-): Promise<TransactionReceipt> {
-  const gasParams = await getEvmGasParametersForContract(
-    swapContractWithSigner
-  );
-
-  const tx = await swapContractWithSigner.recvAndSwapExactOut(
-    signedVaa,
+    { encodedWormholeMessage, circleBridgeMessage, circleAttestation },
     gasParams
   );
   return tx.wait();

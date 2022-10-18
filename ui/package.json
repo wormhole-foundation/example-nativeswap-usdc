@@ -1,5 +1,5 @@
 {
-  "homepage": "https://certusone.github.io/wormhole-nativeswap-example",
+  "homepage": "https://certusone.github.io/nativeswap-usdc-example",
   "name": "NativeSwap",
   "version": "0.1.0",
   "private": true,
@@ -12,6 +12,7 @@
     "@metamask/detect-provider": "^1.2.0",
     "@terra-money/terra.js": "^2.0.14",
     "@terra-money/wallet-provider": "^2.2.0",
+    "@typechain/ethers-v5": "^10.1.0",
     "@types/node": "^16.11.19",
     "@types/react": "^17.0.38",
     "@types/react-dom": "^17.0.11",
@@ -30,8 +31,9 @@
     "use-debounce": "^7.0.1"
   },
   "scripts": {
-    "start": "craco start",
-    "build": "craco build",
+    "start": "npm run build-types && craco start",
+    "build-types": "typechain --target=ethers-v5 --out-dir=src/ethers-contracts ../contracts/build/contracts/*.json",
+    "build": "npm run build-types && craco build",
     "test": "craco test",
     "eject": "react-scripts eject",
     "predeploy": "npm run build",

@@ -615,7 +615,7 @@ export default function Home() {
           BSC Faucet
         </Link>
         <Link
-          href="https://github.com/certusone/wormhole-nativeswap-example/"
+          href="https://github.com/certusone/nativeswap-usdc-example/"
           target="_blank"
           rel="noopener noreferrer"
           style={{ margin: "5px" }}
