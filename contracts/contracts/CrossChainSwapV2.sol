@@ -9,13 +9,13 @@ import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 
 import "./interfaces/IWormhole.sol";
 import "./interfaces/IWETH.sol";
-import "./interfaces/IShuttle.sol";
+import "./interfaces/IUSDCIntegration.sol";
 
 import "./SwapHelper.sol";
 
 /// @title A cross-chain UniswapV2 example
-/// @notice Swaps against UniswapV2 pools and uses Wormhole USDC Shuttle
-/// for cross-chain transfers
+/// @notice Swaps against UniswapV2 pools and uses Wormhole's USDC Bridge integration
+/// to mint and burn USDC cross-chain
 contract CrossChainSwapV2 is SwapHelper {
     using SafeERC20 for IERC20;
     using BytesLib for bytes;
@@ -23,7 +23,7 @@ contract CrossChainSwapV2 is SwapHelper {
     // contracts
     IUniswapV2Router02 public immutable SWAP_ROUTER;
     IWormhole public immutable WORMHOLE;
-    IShuttle public immutable SHUTTLE;
+    IUSDCIntegration public immutable USDC_INTEGRATION;
 
     // token addresses
     address public immutable USDC_ADDRESS;
@@ -32,13 +32,13 @@ contract CrossChainSwapV2 is SwapHelper {
     constructor(
         address _swapRouterAddress,
         address _wormholeAddress,
-        address _usdcShuttleAddress,
+        address _usdcIntegrationAddress,
         address _usdcAddress,
         address _wrappedNativeAddress
     ) {
         SWAP_ROUTER = IUniswapV2Router02(_swapRouterAddress);
         WORMHOLE = IWormhole(_wormholeAddress);
-        SHUTTLE = IShuttle(_usdcShuttleAddress);
+        USDC_INTEGRATION = IUSDCIntegration(_usdcIntegrationAddress);
         USDC_ADDRESS = _usdcAddress;
         WRAPPED_NATIVE_ADDRESS = _wrappedNativeAddress;
     }
@@ -104,15 +104,16 @@ contract CrossChainSwapV2 is SwapHelper {
             relayerFee
         );
 
-        // approve USDC shuttle to spend USDC
+        // approve USDC integration contract to spend USDC
         SafeERC20.safeApprove(
             IERC20(USDC_ADDRESS),
-            address(SHUTTLE),
+            address(USDC_INTEGRATION),
             amountOut
         );
 
-        // call the USDC Shuttle to burn the USDC and emit a wormhole message
-        SHUTTLE.transferTokensWithPayload(
+        // Call the USDC integration contract to burn the USDC
+        // and emit a wormhole message.
+        USDC_INTEGRATION.transferTokensWithPayload(
             USDC_ADDRESS,
             amountOut,
             targetChainId,
@@ -121,7 +122,6 @@ contract CrossChainSwapV2 is SwapHelper {
         );
     }
 
-    /// @dev Executes exactIn native asset swap
     function _swapExactInBeforeTransfer(
         uint256 amountIn,
         uint256 amountOutMinimum,
@@ -146,29 +146,28 @@ contract CrossChainSwapV2 is SwapHelper {
         amountOut = amounts[1];
     }
 
-    /// @dev Executes exactIn native asset swap and pays the relayer
+    /// @dev Mints USDC and executes exactIn native asset swap and pays the relayer
     function recvAndSwapExactNativeIn(
-        IShuttle.RedeemParameters memory shuttleParams
+        IUSDCIntegration.RedeemParameters memory usdcIntegrationParams
     ) external payable returns (uint256[] memory amounts) {
         // check USDC balance before minting
         uint256 balanceBefore = IERC20(USDC_ADDRESS).balanceOf(address(this));
 
         // mint USDC to this contract
-        IShuttle.WormholeDepositWithPayload memory deposit = SHUTTLE.redeemTokensWithPayload(
-            shuttleParams
+        IUSDCIntegration.WormholeDepositWithPayload memory deposit = USDC_INTEGRATION.redeemTokensWithPayload(
+            usdcIntegrationParams
         );
 
         // check USDC balance after minting
         uint256 balanceAfter = IERC20(USDC_ADDRESS).balanceOf(address(this));
         uint256 swapAmount = balanceAfter - balanceBefore;
 
-        // parse swap params from the Shuttle struct payload
+        // parse swap params from USDC integration contract payload
         RecvSwapInParameters memory swapParams = decodeSwapInParameters(
             deposit.payload
         );
 
-        // create dynamic address array
-        // uniswap won't take fixed size array
+        // create dynamic address array, uniswap won't take fixed size array
         address[] memory uniPath = new address[](2);
         uniPath[0] = swapParams.path[0];
         uniPath[1] = swapParams.path[1];
@@ -223,18 +222,18 @@ contract CrossChainSwapV2 is SwapHelper {
             );
             return amounts;
         } catch {
-            // pay relayer in the feeToken since the swap failed
+            // pay relayer in the USDC since the swap failed
             IERC20 feeToken = IERC20(USDC_ADDRESS);
             feeToken.safeTransfer(msg.sender, swapParams.relayerFee);
 
-            // swap failed - return feeToken to recipient
+            // swap failed - return USDC to recipient
             feeToken.safeTransfer(
                 recipientAddress,
                 swapAmount - swapParams.relayerFee
             );
 
             // used in UI to tell user theyere getting
-            // feeToken instead of their desired native asset
+            // USDC instead of their desired native asset
             emit SwapResult(
                 recipientAddress,
                 uniPath[0],
