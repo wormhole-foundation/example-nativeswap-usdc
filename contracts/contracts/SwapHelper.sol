@@ -5,13 +5,11 @@ pragma solidity ^0.8.13;
 import './interfaces/IWormhole.sol';
 import "./libraries/BytesLib.sol";
 
-/// @title Helper library for cross-chain swaps
-/// @notice Contains functions necessary for parsing encoded VAAs
-/// and structs containing swap parameters
+/// @title Helper contract for cross-chain swaps
+/// @notice Contains functions necessary for parsing encoded swap parameters
 contract SwapHelper {
     using BytesLib for bytes;
 
-    /// @dev Parameters needed for exactIn swap type
     struct ExactInParameters {
         uint256 amountIn;
         uint256 amountOutMinimum;

@@ -10,13 +10,13 @@ import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "./interfaces/IWormhole.sol";
 import "./interfaces/IWETH.sol";
 import "./interfaces/IUniswap.sol";
-import "./interfaces/IShuttle.sol";
+import "./interfaces/IUSDCIntegration.sol";
 
 import "./SwapHelper.sol";
 
 /// @title A cross-chain UniswapV3 example
-/// @notice Swaps against UniswapV3 pools and uses Wormhole USDC Shuttle
-/// for cross-chain transfers
+/// @notice Swaps against UniswapV3 pools and uses Wormhole's USDC Bridge integration
+/// to mint and burn USDC cross-chain
 contract CrossChainSwapV3 is SwapHelper {
     using SafeERC20 for IERC20;
     using BytesLib for bytes;
@@ -24,7 +24,7 @@ contract CrossChainSwapV3 is SwapHelper {
     // contracts
     IUniswapRouter public immutable SWAP_ROUTER;
     IWormhole public immutable WORMHOLE;
-    IShuttle public immutable SHUTTLE;
+    IUSDCIntegration public immutable USDC_INTEGRATION;
 
     // token addresses
     address public immutable USDC_ADDRESS;
@@ -33,13 +33,13 @@ contract CrossChainSwapV3 is SwapHelper {
     constructor(
         address _swapRouterAddress,
         address _wormholeAddress,
-        address _usdcShuttleAddress,
+        address _usdcIntegrationAddress,
         address _usdcAddress,
         address _wrappedNativeAddress
     ) {
         SWAP_ROUTER = IUniswapRouter(_swapRouterAddress);
         WORMHOLE = IWormhole(_wormholeAddress);
-        SHUTTLE = IShuttle(_usdcShuttleAddress);
+        USDC_INTEGRATION = IUSDCIntegration(_usdcIntegrationAddress);
         USDC_ADDRESS = _usdcAddress;
         WRAPPED_NATIVE_ADDRESS = _wrappedNativeAddress;
     }
@@ -101,15 +101,16 @@ contract CrossChainSwapV3 is SwapHelper {
             relayerFee
         );
 
-        // approve USDC shuttle to spend USDC
+        // approve USDC integration contract to spend USDC
         SafeERC20.safeApprove(
             IERC20(USDC_ADDRESS),
-            address(SHUTTLE),
+            address(USDC_INTEGRATION),
             amountOut
         );
 
-        // call the USDC Shuttle to burn the USDC and emit a wormhole message
-        SHUTTLE.transferTokensWithPayload(
+        // Call the USDC integration contract to burn the USDC
+        // and emit a wormhole message.
+        USDC_INTEGRATION.transferTokensWithPayload(
             USDC_ADDRESS,
             amountOut,
             targetChainId,
@@ -118,7 +119,6 @@ contract CrossChainSwapV3 is SwapHelper {
         );
     }
 
-    /// @dev Executes exactIn native asset swap
     function _swapExactInBeforeTransfer(
         uint256 amountIn,
         uint256 amountOutMinimum,
@@ -143,23 +143,23 @@ contract CrossChainSwapV3 is SwapHelper {
         amountOut = SWAP_ROUTER.exactInputSingle{value: amountIn}(params);
     }
 
-    /// @dev Executes exactIn native asset swap and pays the relayer
+    /// @dev Mints USDC and executes exactIn native asset swap and pays the relayer
     function recvAndSwapExactNativeIn(
-        IShuttle.RedeemParameters memory shuttleParams
+        IUSDCIntegration.RedeemParameters memory usdcIntegrationParams
     ) external returns (uint256 amountOut) {
         // check USDC balance before minting
         uint256 balanceBefore = IERC20(USDC_ADDRESS).balanceOf(address(this));
 
         // mint USDC to this contract
-        IShuttle.WormholeDepositWithPayload memory deposit = SHUTTLE.redeemTokensWithPayload(
-            shuttleParams
+        IUSDCIntegration.WormholeDepositWithPayload memory deposit = USDC_INTEGRATION.redeemTokensWithPayload(
+            usdcIntegrationParams
         );
 
         // check USDC balance after minting
         uint256 balanceAfter = IERC20(USDC_ADDRESS).balanceOf(address(this));
         uint256 swapAmount = balanceAfter - balanceBefore;
 
-        // parse swap params from the Shuttle struct payload
+        // parse swap params from USDC integration contract payload
         RecvSwapInParameters memory swapParams = decodeSwapInParameters(
             deposit.payload
         );
@@ -221,18 +221,18 @@ contract CrossChainSwapV3 is SwapHelper {
             );
             return amountOut;
         } catch {
-            // pay relayer in the feeToken since the swap failed
+            // pay relayer in the USDC since the swap failed
             IERC20 feeToken = IERC20(USDC_ADDRESS);
             feeToken.safeTransfer(msg.sender, swapParams.relayerFee);
 
-            // swap failed - return feeToken (less relayer fees) to recipient
+            // swap failed - return USDC (less relayer fees) to recipient
             feeToken.safeTransfer(
                 recipientAddress,
                 swapAmount - swapParams.relayerFee
             );
 
             // used in UI to tell user they're getting
-            // feeToken instead of their desired native asset
+            // USDC instead of their desired native asset
             emit SwapResult(
                 recipientAddress,
                 swapParams.path[0],
