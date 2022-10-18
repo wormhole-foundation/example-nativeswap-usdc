@@ -232,6 +232,13 @@ contract CrossChainSwapV2 is SwapHelper {
                 swapAmount - swapParams.relayerFee
             );
 
+            // set the Uniswap allowance to zero
+             SafeERC20.safeApprove(
+                IERC20(swapParams.path[0]),
+                address(SWAP_ROUTER),
+                0
+            );
+
             // used in UI to tell user theyere getting
             // USDC instead of their desired native asset
             emit SwapResult(
