@@ -20,8 +20,8 @@ import {
   UniswapToUniswapQuoter,
 } from "../route/cross-quote";
 import {
-  TOKEN_BRIDGE_ADDRESS_ETHEREUM,
-  TOKEN_BRIDGE_ADDRESS_AVALANCHE,
+  CIRCLE_EMITTER_ADDRESS_ETHEREUM,
+  CIRCLE_EMITTER_ADDRESS_AVALANCHE,
   CORE_BRIDGE_ADDRESS_ETHEREUM,
   CORE_BRIDGE_ADDRESS_AVALANCHE,
   WORMHOLE_RPC_HOSTS,
@@ -59,7 +59,7 @@ interface SwapContractParameters {
 interface WormholeParameters {
   chainId: ChainId;
   coreBridgeAddress: string;
-  tokenBridgeAddress: string;
+  circleEmitterAddress: string;
 }
 
 interface ExecutionParameters {
@@ -74,7 +74,7 @@ const EXECUTION_PARAMETERS_ETHEREUM: ExecutionParameters = {
   wormhole: {
     chainId: CHAIN_ID_ETH,
     coreBridgeAddress: CORE_BRIDGE_ADDRESS_ETHEREUM,
-    tokenBridgeAddress: TOKEN_BRIDGE_ADDRESS_ETHEREUM,
+    circleEmitterAddress: CIRCLE_EMITTER_ADDRESS_ETHEREUM,
   },
 };
 
@@ -85,7 +85,7 @@ const EXECUTION_PARAMETERS_AVALANCHE: ExecutionParameters = {
   wormhole: {
     chainId: CHAIN_ID_AVAX,
     coreBridgeAddress: CORE_BRIDGE_ADDRESS_AVALANCHE,
-    tokenBridgeAddress: TOKEN_BRIDGE_ADDRESS_AVALANCHE,
+    circleEmitterAddress: CIRCLE_EMITTER_ADDRESS_AVALANCHE,
   },
 };
 
@@ -208,13 +208,6 @@ async function evmApproveAndSwapExactIn(
     const transactionParams = { value: amountIn, ...gasParams };
 
     console.info("swapExactNativeInAndTransfer");
-    console.log(swapContractParams.address, protocol);
-    console.log("parameters");
-    console.log(swapParams);
-    console.log(pathArray);
-    console.log(quoteParams.relayerFee);
-    console.log(dstWormholeChainId);
-    console.log(dstContractAddress);
     const tx = await contractWithSigner.swapExactNativeInAndTransfer(
       swapParams,
       pathArray,
@@ -472,7 +465,7 @@ export class UniswapToUniswapExecutor {
         receipt,
         wormholeParams.coreBridgeAddress
       ),
-      emitterAddress: getEmitterAddressEth(wormholeParams.tokenBridgeAddress),
+      emitterAddress: getEmitterAddressEth(wormholeParams.circleEmitterAddress),
     };
   }
 

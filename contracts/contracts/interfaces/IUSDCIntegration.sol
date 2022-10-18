@@ -33,7 +33,9 @@ interface IUSDCIntegration {
         bytes memory payload
     ) external payable returns (uint64 messageSequence);
 
-    function redeemTokensWithPayload(
-        RedeemParameters memory params
-    ) external returns (WormholeDepositWithPayload memory wormholeDepositWithPayload);
+    function redeemTokensWithPayload(RedeemParameters memory params)
+        external
+        returns (WormholeDepositWithPayload memory wormholeDepositWithPayload);
+
+    function isMessageConsumed(bytes32 hash) external view returns (bool);
 }

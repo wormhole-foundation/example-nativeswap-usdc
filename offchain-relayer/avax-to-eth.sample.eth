@@ -1,0 +1,15 @@
+### This environment is used to configure the relayer to redeem transactions on AVAX
+
+export RELAYER_TIMEOUT=5000
+export RECEIPT_MAX_ATTEMPTS=10
+export RECEIPT_TIMEOUT=1000
+
+export CIRCLE_ENDPOINT=https://iris-api-sandbox.circle.com/attestations/
+export CIRCLE_EMITTER=0x52FfFb3EE8Fa7838e9858A2D5e454007b9027c3C
+
+export SRC_RPC=wss://api.avax-test.network/ext/bc/C/ws
+export SRC_CONTRACT_TYPE=v2
+export SRC_CONTRACT_ADDRESS=0x06fBF791a3822D267280274E44b88476Ea5C8bc9
+
+export DST_RPC=
+export DST_CONTRACT_ADDRESS=0xDBd3BF9ee98657Fc6415D49Ad57D808218A9bd9b

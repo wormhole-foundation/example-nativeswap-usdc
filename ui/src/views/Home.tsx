@@ -37,13 +37,13 @@ import { useSnackbar } from "notistack";
 import { Alert } from "@material-ui/lab";
 import parseError from "../utils/parseError";
 import Settings from "../components/Settings";
-import getIsTransferCompletedEvmWithRetry from "../utils/getIsTransferCompletedWithRetry";
 import CircleLoader from "../components/CircleLoader";
 import { ArrowForward, CheckCircleOutlineRounded } from "@material-ui/icons";
 import SwapProgress from "../components/SwapProgress";
 import Footer from "../components/Footer";
 import TerraWalletKey from "../components/TerraWalletKey";
 import useIsWalletReady from "../hooks/useIsWalletReady";
+import { IWormhole__factory, IUSDCIntegration__factory } from "../ethers-contracts";
 
 const useStyles = makeStyles((theme) => ({
   bg: {
@@ -392,6 +392,7 @@ export default function Home() {
         setIsSourceSwapComplete(true);
         setSourceTxBlockNumber(sourceReceipt.blockNumber);
 
+        console.log("fetching vaa");
         // Wait for the guardian network to reach consensus and emit the signedVAA
         const { vaaBytes } = await getSignedVAAWithRetry(
           WORMHOLE_RPC_HOSTS,
@@ -399,18 +400,31 @@ export default function Home() {
           executor.vaaSearchParams.emitterAddress,
           executor.vaaSearchParams.sequence
         );
+        console.log("vaa retrieved");
         setHasSignedVAA(true);
+
+        const parsed = await IWormhole__factory.connect(
+            executor.srcExecutionParams.wormhole.coreBridgeAddress,
+            provider
+        ).parseVM(vaaBytes);
+
+        const circleEmitter = IUSDCIntegration__factory.connect(
+            executor.dstExecutionParams.wormhole.circleEmitterAddress,
+            executor.quoter.getDstEvmProvider()!,
+        )
         //  Check if the signedVAA has redeemed by the relayer
-        const isCompleted = await getIsTransferCompletedEvmWithRetry(
-          executor.dstExecutionParams.wormhole.tokenBridgeAddress,
-          // TODO: fix typescript error
-          // @ts-ignore
-          executor.quoter.getDstEvmProvider(),
-          vaaBytes,
-          // retry for two minutes
-          3000,
-          40
-        );
+        let isCompleted = false;
+        
+        // retry for two minutes
+        let retries = 0;
+        while (!isCompleted && retries <= 20) {
+          isCompleted = await circleEmitter.isMessageConsumed(parsed.hash);
+          ++retries;
+
+          // sleep for 3 seconds
+          await new Promise((resolve) => setTimeout(resolve, 3000));
+        };
+
         if (!isCompleted) {
           // If the relayer hasn't redeemed the signedVAA, then manually redeem it ourselves
           setRelayerTimeoutString(
