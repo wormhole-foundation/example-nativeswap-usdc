@@ -8,7 +8,7 @@ Multi-chain native-to-native token swap using existing DEXes.
 
 ### Details
 
-Using liquidity of native vs USDC (i.e. the USDC highway), one can swap from native A on chain A to native B on chain B. For this specific example, we demonstrate a swap between any combination of ETH (Goerli testnet) and AVAX (Fuji testnet). We wrote example smart contracts to interact with Uniswap V3 and Uniswap V2 forks. Any DEX can be used to replace our example as long as the swap for a particular DEX has all of its parameters to perform the swap(s).
+Using liquidity of native vs USDC (i.e. the USDC highway), one can swap from native A on chain A to native B on chain B. For this specific example, we demonstrate a swap between ETH (Goerli testnet) and AVAX (Fuji testnet). We wrote example smart contracts to interact with Uniswap V3 and Uniswap V2 forks. Any DEX can be used to replace our example as long as the swap for a particular DEX has all of its parameters to perform the swap(s).
 
 A protocol that hosts NativeSwap is expected to run its own relayer to enhance its user experience by only requiring a one-click transaction to perform the complete swap. Otherwise the user will have to perform an extra transaction to manually allow the final swap.
 
@@ -31,7 +31,7 @@ We also wrote a front-end UI using a custom class (UniswapToUniswapExecutor) to 
 
 That is up to you! You are not limited to native-to-native multi-chain swaps. Build in your own smart routing with whichever DEX to perform any swap from chain A to chain B. Wormhole messaging and token transfers with payload are generic enough to adapt this example for any of the chains Wormhole currently supports.
 
-### Running
+### Deploying Contracts
 
 First compile the example contracts:
 
@@ -41,7 +41,7 @@ npm ci
 ./compile_contracts.sh
 ```
 
-Then copy sample.env to .env, edit .env and replace YOUR-PROJECT-ID with your Infura Goerli and Mumbai Project IDs and also add your Ethereum wallet's private key.
+Then copy sample.env to .env, edit .env and replace YOUR-PROJECT-ID with your Infura Goerli and also add your Ethereum wallet's private key.
 These are needed to deploy the example contracts.
 
 ```
@@ -56,48 +56,29 @@ Then deploy the example contracts:
 ./deploy_v3.sh
 ```
 
-Then change into the react directory, copy sample.env to .env and replace YOUR-PROJECT-ID with your Infura Goerli and Mumbai Project IDs
+### Running the off-chain relayer
+
+First, make sure that the contracts are compiled and deployed. Then run the following commands to set up the off-chain relayer environment variables:
 
 ```
-cd react
-cp .env.sample .env
-# make sure to edit .env file
+cp avax-to-eth.sample.env avax-to-eth.env
+
+# add your Goerli REST RPC to the `DST_RPC=` variable
+# update the SRC_CONTRACT_ADDRESS and DST_CONTRACT ADDRESS with your deployed contract addresses
+
+# source the avax-to-eth.env file
+. avax-to-eth.env
 ```
 
-And finally, start the react app:
+Install dependencies and build the relayer:
 
 ```
-npm ci
-npm run start
+yarn
+yarn build
 ```
 
-### Running the swap relayer
-
-You need to have a spy_guardian running in TestNet. If there is not already one running, you can build the docker image and start it as follows:
-
-#### Build the spy_guardian docker container if you don't already have it.
+Run the off-chain relayer process:
 
 ```
-$ cd swap_relayer
-$ docker build -f Dockerfile.spy_guardian -t spy_guardian .
-```
-
-#### Start the spy_guardian docker container in TestNet.
-
-```
-$ docker run --platform linux/amd64 --network=host spy_guardian \
---bootstrap /dns4/wormhole-testnet-v2-bootstrap.certus.one/udp/8999/quic/p2p/12D3KooWBY9ty9CXLBXGQzMuqkziLntsVcyz4pk1zWaJRvJn6Mmt \
---network /wormhole/testnet/2/1 \
---spyRPC "[::]:7073"
-```
-
-#### Start the swap relayer
-
-```
-$ cd swap_relayer
-$ cp .env.sample .env
-$ # Edit the parameters in .env as appropriate.
-$ npm ci
-$ npm run build
-$ npm run start
+PRIVATE_KEY=put_your_private_key_here yarn start
 ```
