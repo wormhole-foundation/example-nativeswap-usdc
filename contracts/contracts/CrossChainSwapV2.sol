@@ -9,7 +9,7 @@ import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 
 import "./interfaces/IWormhole.sol";
 import "./interfaces/IWETH.sol";
-import "./interfaces/IUSDCIntegration.sol";
+import "./interfaces/ICircleIntegration.sol";
 
 import "./SwapHelper.sol";
 
@@ -20,14 +20,20 @@ contract CrossChainSwapV2 is SwapHelper {
     using SafeERC20 for IERC20;
     using BytesLib for bytes;
 
+    // contract deployer
+    address deployer;
+
     // contracts
     IUniswapV2Router02 public immutable SWAP_ROUTER;
     IWormhole public immutable WORMHOLE;
-    IUSDCIntegration public immutable USDC_INTEGRATION;
+    ICircleIntegration public immutable CIRCLE_INTEGRATION;
 
     // token addresses
     address public immutable USDC_ADDRESS;
     address public immutable WRAPPED_NATIVE_ADDRESS;
+
+    // registered nativeswap contracts
+    mapping(uint16 => bytes32) registeredContracts;
 
     constructor(
         address _swapRouterAddress,
@@ -36,9 +42,10 @@ contract CrossChainSwapV2 is SwapHelper {
         address _usdcAddress,
         address _wrappedNativeAddress
     ) {
+        deployer = msg.sender;
         SWAP_ROUTER = IUniswapV2Router02(_swapRouterAddress);
         WORMHOLE = IWormhole(_wormholeAddress);
-        USDC_INTEGRATION = IUSDCIntegration(_usdcIntegrationAddress);
+        CIRCLE_INTEGRATION = ICircleIntegration(_usdcIntegrationAddress);
         USDC_ADDRESS = _usdcAddress;
         WRAPPED_NATIVE_ADDRESS = _wrappedNativeAddress;
     }
@@ -74,6 +81,10 @@ contract CrossChainSwapV2 is SwapHelper {
             "tokenOut must be USDC"
         );
         require(path.length == 4, "invalid path");
+        require(
+            registeredContracts[targetChainId] == targetContractAddress,
+            "target contract not registered"
+        );
 
         // cache wormhole fee and check msg.value
         uint256 wormholeFee = WORMHOLE.messageFee();
@@ -107,17 +118,24 @@ contract CrossChainSwapV2 is SwapHelper {
         // approve USDC integration contract to spend USDC
         SafeERC20.safeApprove(
             IERC20(USDC_ADDRESS),
-            address(USDC_INTEGRATION),
+            address(CIRCLE_INTEGRATION),
             amountOut
         );
 
+        // create transfer params used to invoke the circle integration contract
+        ICircleIntegration.TransferParameters memory transferParams =
+            ICircleIntegration.TransferParameters({
+                token: USDC_ADDRESS,
+                amount: amountOut,
+                targetChain: targetChainId,
+                mintRecipient: targetContractAddress
+            });
+
         // Call the USDC integration contract to burn the USDC
         // and emit a wormhole message.
-        USDC_INTEGRATION.transferTokensWithPayload(
-            USDC_ADDRESS,
-            amountOut,
-            targetChainId,
-            targetContractAddress,
+        CIRCLE_INTEGRATION.transferTokensWithPayload(
+            transferParams,
+            0, // batchId=0 to opt out of batching
             payload
         );
     }
@@ -148,14 +166,14 @@ contract CrossChainSwapV2 is SwapHelper {
 
     /// @dev Mints USDC and executes exactIn native asset swap and pays the relayer
     function recvAndSwapExactNativeIn(
-        IUSDCIntegration.RedeemParameters memory usdcIntegrationParams
+        ICircleIntegration.RedeemParameters memory redeemParams
     ) external payable returns (uint256[] memory amounts) {
         // check USDC balance before minting
         uint256 balanceBefore = IERC20(USDC_ADDRESS).balanceOf(address(this));
 
         // mint USDC to this contract
-        IUSDCIntegration.WormholeDepositWithPayload memory deposit = USDC_INTEGRATION.redeemTokensWithPayload(
-            usdcIntegrationParams
+        ICircleIntegration.DepositWithPayload memory deposit = CIRCLE_INTEGRATION.redeemTokensWithPayload(
+            redeemParams
         );
 
         // check USDC balance after minting
@@ -167,6 +185,14 @@ contract CrossChainSwapV2 is SwapHelper {
             deposit.payload
         );
 
+        // verify that the sender is a registered contract
+        require(
+            deposit.fromAddress == registeredContracts[
+                CIRCLE_INTEGRATION.getChainIdFromDomain(deposit.sourceDomain)
+            ],
+            "fromAddress is not a registered contract"
+        );
+
         // create dynamic address array, uniswap won't take fixed size array
         address[] memory uniPath = new address[](2);
         uniPath[0] = swapParams.path[0];
@@ -174,7 +200,8 @@ contract CrossChainSwapV2 is SwapHelper {
 
         // sanity check path
         require(
-            uniPath[0]==USDC_ADDRESS,
+            uniPath[0]==USDC_ADDRESS &&
+            address(uint160(uint256(deposit.token)))==USDC_ADDRESS,
             "tokenIn must be USDC"
         );
         require(
@@ -249,6 +276,27 @@ contract CrossChainSwapV2 is SwapHelper {
                 0
             );
         }
+    }
+
+    /// @dev `registerContract` serves to save trusted circle relayer contract addresses
+    function registerContract(
+        uint16 chainId,
+        bytes32 contractAddress
+    ) public onlyDeployer {
+        // sanity check both input arguments
+        require(
+            contractAddress != bytes32(0),
+            "emitterAddress cannot equal bytes32(0)"
+        );
+        require(chainId != 0, "chainId must be > 0");
+
+        // update the registeredContracts state variable
+        registeredContracts[chainId] = contractAddress;
+    }
+
+    modifier onlyDeployer() {
+        require(deployer == msg.sender, "caller not the deployer");
+        _;
     }
 
     // necessary for receiving native assets
