@@ -1,8 +1,8 @@
 {
   "files": {
     "main.css": "/example-nativeswap-usdc/static/css/main.a55348bc.chunk.css",
-    "main.js": "/example-nativeswap-usdc/static/js/main.ab9b417e.chunk.js",
-    "main.js.map": "/example-nativeswap-usdc/static/js/main.ab9b417e.chunk.js.map",
+    "main.js": "/example-nativeswap-usdc/static/js/main.d1bf22bf.chunk.js",
+    "main.js.map": "/example-nativeswap-usdc/static/js/main.d1bf22bf.chunk.js.map",
     "runtime-main.js": "/example-nativeswap-usdc/static/js/runtime-main.f2376c19.js",
     "runtime-main.js.map": "/example-nativeswap-usdc/static/js/runtime-main.f2376c19.js.map",
     "static/js/2.85ca2034.chunk.js": "/example-nativeswap-usdc/static/js/2.85ca2034.chunk.js",
@@ -44,6 +44,6 @@
     "static/js/runtime-main.f2376c19.js",
     "static/js/2.85ca2034.chunk.js",
     "static/css/main.a55348bc.chunk.css",
-    "static/js/main.ab9b417e.chunk.js"
+    "static/js/main.d1bf22bf.chunk.js"
   ]
 }
