@@ -157,6 +157,12 @@ const WORMHOLE_RPC_HOSTS = ["https://wormhole-v2-testnet-api.certus.one"];
         continue;
       }
 
+      await dstContract.provider
+        .getBalance(dstWallet.address)
+        .then((balance) =>
+          console.log(`wallet balance: ${ethers.utils.formatUnits(balance)}`)
+        );
+
       const redeemReceipt = await dstContract
         .recvAndSwapExactNativeIn({
           encodedWormholeMessage,
@@ -177,6 +183,12 @@ const WORMHOLE_RPC_HOSTS = ["https://wormhole-v2-testnet-api.certus.one"];
       if (redeemReceipt !== null) {
         console.log(`relayed ${redeemReceipt.transactionHash}`);
       }
+
+      await dstContract.provider
+        .getBalance(dstWallet.address)
+        .then((balance) =>
+          console.log(`wallet balance: ${ethers.utils.formatUnits(balance)}`)
+        );
 
       pendingTxHashes.shift();
     }
