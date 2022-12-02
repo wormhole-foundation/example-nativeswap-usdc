@@ -1,12 +1,12 @@
 {
   "files": {
     "main.css": "/example-nativeswap-usdc/static/css/main.a55348bc.chunk.css",
-    "main.js": "/example-nativeswap-usdc/static/js/main.bb733e6c.chunk.js",
-    "main.js.map": "/example-nativeswap-usdc/static/js/main.bb733e6c.chunk.js.map",
+    "main.js": "/example-nativeswap-usdc/static/js/main.ab9b417e.chunk.js",
+    "main.js.map": "/example-nativeswap-usdc/static/js/main.ab9b417e.chunk.js.map",
     "runtime-main.js": "/example-nativeswap-usdc/static/js/runtime-main.f2376c19.js",
     "runtime-main.js.map": "/example-nativeswap-usdc/static/js/runtime-main.f2376c19.js.map",
-    "static/js/2.a92d3545.chunk.js": "/example-nativeswap-usdc/static/js/2.a92d3545.chunk.js",
-    "static/js/2.a92d3545.chunk.js.map": "/example-nativeswap-usdc/static/js/2.a92d3545.chunk.js.map",
+    "static/js/2.85ca2034.chunk.js": "/example-nativeswap-usdc/static/js/2.85ca2034.chunk.js",
+    "static/js/2.85ca2034.chunk.js.map": "/example-nativeswap-usdc/static/js/2.85ca2034.chunk.js.map",
     "static/js/3.fd390cf8.chunk.js": "/example-nativeswap-usdc/static/js/3.fd390cf8.chunk.js",
     "static/js/3.fd390cf8.chunk.js.map": "/example-nativeswap-usdc/static/js/3.fd390cf8.chunk.js.map",
     "static/js/4.32fd1a95.chunk.js": "/example-nativeswap-usdc/static/js/4.32fd1a95.chunk.js",
@@ -29,7 +29,7 @@
     "static/js/10.045cadd0.chunk.js.map": "/example-nativeswap-usdc/static/js/10.045cadd0.chunk.js.map",
     "index.html": "/example-nativeswap-usdc/index.html",
     "static/css/main.a55348bc.chunk.css.map": "/example-nativeswap-usdc/static/css/main.a55348bc.chunk.css.map",
-    "static/js/2.a92d3545.chunk.js.LICENSE.txt": "/example-nativeswap-usdc/static/js/2.a92d3545.chunk.js.LICENSE.txt",
+    "static/js/2.85ca2034.chunk.js.LICENSE.txt": "/example-nativeswap-usdc/static/js/2.85ca2034.chunk.js.LICENSE.txt",
     "static/media/Discord.3cc30da6.svg": "/example-nativeswap-usdc/static/media/Discord.3cc30da6.svg",
     "static/media/Docs.5306a132.svg": "/example-nativeswap-usdc/static/media/Docs.5306a132.svg",
     "static/media/Github.cf553f61.svg": "/example-nativeswap-usdc/static/media/Github.cf553f61.svg",
@@ -42,8 +42,8 @@
   },
   "entrypoints": [
     "static/js/runtime-main.f2376c19.js",
-    "static/js/2.a92d3545.chunk.js",
+    "static/js/2.85ca2034.chunk.js",
     "static/css/main.a55348bc.chunk.css",
-    "static/js/main.bb733e6c.chunk.js"
+    "static/js/main.ab9b417e.chunk.js"
   ]
 }
