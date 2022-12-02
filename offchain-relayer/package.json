@@ -14,7 +14,8 @@
     "typescript": "^4.8.4"
   },
   "scripts": {
-    "build": "typechain --target=ethers-v5 --out-dir=src/ethers-contracts ../contracts/build/contracts/*.json",
+    "build-types": "typechain --target=ethers-v5 --out-dir=src/ethers-contracts ../contracts/build/contracts/*.json",
+    "build": "npm run build-types",
     "clean": "rm -rf node_modules src/ethers-contracts",
     "start": "npm run build && ts-node src/main.ts"
   }

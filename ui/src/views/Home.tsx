@@ -43,7 +43,7 @@ import SwapProgress from "../components/SwapProgress";
 import Footer from "../components/Footer";
 import TerraWalletKey from "../components/TerraWalletKey";
 import useIsWalletReady from "../hooks/useIsWalletReady";
-import { IWormhole__factory, IUSDCIntegration__factory } from "../ethers-contracts";
+import { IWormhole__factory, ICircleIntegration__factory } from "../ethers-contracts";
 
 const useStyles = makeStyles((theme) => ({
   bg: {
@@ -408,7 +408,7 @@ export default function Home() {
             provider
         ).parseVM(vaaBytes);
 
-        const circleEmitter = IUSDCIntegration__factory.connect(
+        const circleEmitter = ICircleIntegration__factory.connect(
             executor.dstExecutionParams.wormhole.circleEmitterAddress,
             executor.quoter.getDstEvmProvider()!,
         )
@@ -605,15 +605,7 @@ export default function Home() {
           Goerli Faucet
         </Link>
         <Link
-          href="https://faucet.polygon.technology/"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ margin: "5px" }}
-        >
-          Mumbai Faucet
-        </Link>
-        <Link
-          href="https://faucet.avax-test.network/"
+          href="https://faucet.avax.network/"
           target="_blank"
           rel="noopener noreferrer"
           style={{ margin: "5px" }}
@@ -621,15 +613,7 @@ export default function Home() {
           Fuji Faucet
         </Link>
         <Link
-          href="https://testnet.binance.org/faucet-smart/"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ margin: "5px" }}
-        >
-          BSC Faucet
-        </Link>
-        <Link
-          href="https://github.com/certusone/nativeswap-usdc-example/"
+          href="https://github.com/wormhole-foundation/example-nativeswap-usdc/"
           target="_blank"
           rel="noopener noreferrer"
           style={{ margin: "5px" }}

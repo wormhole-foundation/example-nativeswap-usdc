@@ -1,6 +1,6 @@
 ## NativeSwap
 
-https://certusone.github.io/nativeswap-usdc-example/
+https://wormhole-foundation.github.io/example-nativeswap-usdc/
 
 This is a non-production example program.
 

@@ -20,8 +20,8 @@ import {
   UniswapToUniswapQuoter,
 } from "../route/cross-quote";
 import {
-  CIRCLE_EMITTER_ADDRESS_ETHEREUM,
-  CIRCLE_EMITTER_ADDRESS_AVALANCHE,
+  CIRCLE_INTEGRATION_ADDRESS_ETHEREUM,
+  CIRCLE_INTEGRATION_ADDRESS_AVALANCHE,
   CORE_BRIDGE_ADDRESS_ETHEREUM,
   CORE_BRIDGE_ADDRESS_AVALANCHE,
   WORMHOLE_RPC_HOSTS,
@@ -74,7 +74,7 @@ const EXECUTION_PARAMETERS_ETHEREUM: ExecutionParameters = {
   wormhole: {
     chainId: CHAIN_ID_ETH,
     coreBridgeAddress: CORE_BRIDGE_ADDRESS_ETHEREUM,
-    circleEmitterAddress: CIRCLE_EMITTER_ADDRESS_ETHEREUM,
+    circleEmitterAddress: CIRCLE_INTEGRATION_ADDRESS_ETHEREUM,
   },
 };
 
@@ -85,7 +85,7 @@ const EXECUTION_PARAMETERS_AVALANCHE: ExecutionParameters = {
   wormhole: {
     chainId: CHAIN_ID_AVAX,
     coreBridgeAddress: CORE_BRIDGE_ADDRESS_AVALANCHE,
-    circleEmitterAddress: CIRCLE_EMITTER_ADDRESS_AVALANCHE,
+    circleEmitterAddress: CIRCLE_INTEGRATION_ADDRESS_AVALANCHE,
   },
 };
 

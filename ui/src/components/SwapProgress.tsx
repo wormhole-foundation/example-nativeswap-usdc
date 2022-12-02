@@ -60,7 +60,7 @@ export default function TransactionProgress({
       ? currentBlock - txBlockNumber
       : 0;
   const expectedBlocks =
-    chainId === CHAIN_ID_POLYGON ? 512 : CHAIN_ID_AVAX ? 1 : 15;
+    chainId === CHAIN_ID_POLYGON ? 512 : 1; //CHAIN_ID_AVAX ? 1 : 15;
   blockDiff = Math.min(Math.max(blockDiff, 0), expectedBlocks);
   let value;
   let valueBuffer;
