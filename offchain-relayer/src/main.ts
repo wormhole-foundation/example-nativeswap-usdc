@@ -4,8 +4,7 @@ import {
   ChainId,
   getEmitterAddressEth,
   getSignedVAAWithRetry,
-  IWormhole__factory,
-  parseSequencesFromLogEth,
+  Implementation__factory,
 } from "@certusone/wormhole-sdk";
 import { NodeHttpTransport } from "@improbable-eng/grpc-web-node-http-transport";
 import {
@@ -14,6 +13,7 @@ import {
   ICircleIntegration__factory,
 } from "./ethers-contracts";
 import { WebSocketProvider } from "./websocket";
+import { TypedEvent } from "./ethers-contracts/common";
 
 const WORMHOLE_RPC_HOSTS = ["https://wormhole-v2-testnet-api.certus.one"];
 
@@ -38,7 +38,13 @@ const WORMHOLE_RPC_HOSTS = ["https://wormhole-v2-testnet-api.certus.one"];
   const srcContractType = process.env.SRC_CONTRACT_TYPE!;
   const circleEmitter = process.env.CIRCLE_EMITTER!;
 
-  const srcProvider = new WebSocketProvider(process.env.SRC_RPC!);
+  const srcWebsocketProvider = new WebSocketProvider(
+    process.env.SRC_WEBSOCKET_RPC!
+  );
+  const srcProvider = new ethers.providers.StaticJsonRpcProvider(
+    process.env.SRC_STATIC_RPC!
+  );
+
   const dstWallet = new ethers.Wallet(
     process.env.PRIVATE_KEY!,
     new ethers.providers.StaticJsonRpcProvider(process.env.DST_RPC!)
@@ -61,10 +67,13 @@ const WORMHOLE_RPC_HOSTS = ["https://wormhole-v2-testnet-api.certus.one"];
   })();
 
   // wormhole
-  const wormhole = await srcContract
-    .WORMHOLE()
-    .then((address) => IWormhole__factory.connect(address, srcProvider));
-  const srcChainId = await wormhole.chainId().then((id) => id as ChainId);
+  const wormholeAddress = await srcContract.WORMHOLE();
+  const srcChainId = await Implementation__factory.connect(
+    wormholeAddress,
+    srcProvider
+  )
+    .chainId()
+    .then((id) => id as ChainId);
 
   const wormCircle = await srcContract
     .CIRCLE_INTEGRATION()
@@ -77,20 +86,47 @@ const WORMHOLE_RPC_HOSTS = ["https://wormhole-v2-testnet-api.certus.one"];
   console.log(`src: wormhole chain id: ${srcChainId}`);
 
   // collect pending transactions
-  const pendingTxHashes: string[] = [];
-  srcProvider.on("pending", (txHash: string) => {
-    if (pendingTxHashes.includes(txHash)) {
-      return;
+  const pending: [string, string][] = [];
+
+  const websocketWormhole = Implementation__factory.connect(
+    wormholeAddress,
+    srcWebsocketProvider
+  );
+  websocketWormhole.on(
+    websocketWormhole.filters.LogMessagePublished(wormCircle.address),
+    (
+      _sender: string,
+      sequence: ethers.BigNumber,
+      _nonce: number,
+      _payload: string,
+      _consistencyLevel: number,
+      typedEvent: TypedEvent<
+        [string, ethers.BigNumber, number, string, number] & {
+          sender: string;
+          sequence: ethers.BigNumber;
+          nonce: number;
+          payload: string;
+          consistencyLevel: number;
+        }
+      >
+    ) => {
+      const txHash = typedEvent.transactionHash;
+      if (
+        pending.findIndex(([foundTxHash, _]) => foundTxHash === txHash) >= 0
+      ) {
+        return;
+      }
+      pending.push([txHash, sequence.toString()]);
     }
-    pendingTxHashes.push(txHash);
-  });
+  );
+
   console.log("listening to transactions");
 
   // process transactions here
   while (true) {
-    if (pendingTxHashes.length > 0) {
+    if (pending.length > 0) {
       // get first transaction hash
-      const txHash = pendingTxHashes[0];
+      const [txHash, sequence] = pending[0];
 
       // attempt to get transaction receipt
       let receipt: ethers.providers.TransactionReceipt | null = null;
@@ -107,22 +143,13 @@ const WORMHOLE_RPC_HOSTS = ["https://wormhole-v2-testnet-api.certus.one"];
 
       // if we really have a receipt, process the logs
       if (receipt === null || receipt.to != srcContract.address) {
-        pendingTxHashes.shift();
+        pending.shift();
         continue;
       }
 
-      console.log(`found transaction ${txHash}`);
+      console.log(`found transaction ${txHash}, sequence: ${sequence}`);
 
-      // fetch wormhole message sequence
-      const sequences = parseSequencesFromLogEth(receipt, wormhole.address);
-      if (sequences.length == 0) {
-        console.log(`probably just a redeem. moving on`);
-        pendingTxHashes.shift();
-        continue;
-      }
-      const sequence = sequences[0];
-
-      // now fetched the signed message
+      // now fetch the signed message
       const result = await getSignedVAAWithRetry(
         WORMHOLE_RPC_HOSTS,
         srcChainId,
@@ -137,7 +164,7 @@ const WORMHOLE_RPC_HOSTS = ["https://wormhole-v2-testnet-api.certus.one"];
 
       if (result === null) {
         console.log(`cannot find signed vaa for ${txHash}`);
-        pendingTxHashes.shift();
+        pending.shift();
         continue;
       }
 
@@ -153,7 +180,7 @@ const WORMHOLE_RPC_HOSTS = ["https://wormhole-v2-testnet-api.certus.one"];
         );
       if (circleBridgeMessage === null || circleAttestation === null) {
         console.log(`cannot attest Circle message for ${txHash}`);
-        pendingTxHashes.shift();
+        pending.shift();
         continue;
       }
 
@@ -190,7 +217,7 @@ const WORMHOLE_RPC_HOSTS = ["https://wormhole-v2-testnet-api.certus.one"];
           console.log(`wallet balance: ${ethers.utils.formatUnits(balance)}`)
         );
 
-      pendingTxHashes.shift();
+      pending.shift();
     }
 
     await sleep(relayerTimeout);
